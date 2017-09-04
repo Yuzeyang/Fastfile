@@ -1,0 +1,52 @@
+# Customise this file, documentation can be found here:
+# https://github.com/fastlane/fastlane/tree/master/fastlane/docs
+# All available actions: https://docs.fastlane.tools/actions
+# can also be listed using the `fastlane actions` command
+
+# Change the syntax highlighting to Ruby
+# All lines starting with a # are ignored when running `fastlane`
+
+# If you want to automatically update fastlane if a new version is available:
+# update_fastlane
+
+# This is the minimum version number required.
+# Update this, if you use features of a newer version
+fastlane_version "2.13.0"
+
+default_platform :ios
+
+platform :ios do
+  desc "Push pod repo to remote"
+  lane :pod_repo_push do |options|
+    version = options[:version]
+    project = options[:project]
+    path = "#{project}.podspec"
+
+    puts("#{project} start add version #{version}")
+
+    git_pull # 拉取最新代码
+    ensure_git_branch # 确保当前是 master 分支
+    # pod_lib_lint(allow_warnings: true)
+    pod_spec_lint(allow_warnings: true)
+    version_bump_podspec(path: path, version_number: version) # 修改 podspec 中版本
+    # git_add(path: ".")
+    git_commit(path: ".", message: "update version to #{version}")
+    push_to_git_remote # 提交本地改动到远程分支
+    add_git_tag(tag: version) # 添加 tag
+    push_git_tags # push 本地 tags
+    pod_push(path: path, allow_warnings: true) # push podspec 到仓库
+
+    puts("push success, current version is #{version}")
+  end
+
+  error do |lane, exception|
+    puts(exception.message);
+  end
+end
+
+
+# More information about multiple platforms in fastlane: https://github.com/fastlane/fastlane/blob/master/fastlane/docs/Platforms.md
+# All available actions: https://docs.fastlane.tools/actions
+
+# fastlane reports which actions are used
+# No personal data is recorded. Learn more at https://github.com/fastlane/enhancer
